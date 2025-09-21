@@ -1,0 +1,72 @@
+#contexto
+Organizar a base de dados meteorológicos e de vazão para treinamento de um modelo de ML para previsão mensal de vazão
+
+#dados
+`data/glob_1993a2023_mo.csv` : dados meteorológicos de 1993 a 2023
+`data/FUNIL_VazaoObs_1998_2024.xlsx` : dados de vazão de 1998 a 2024
+`data/Subbasin_FUNIL/Subbacias_FUNIL-4326WGS84.shp` : delimitação espacial de cada subbacia do reservatório de funil para mapear as coordenadas das variáveis meteorológicas para as respectivas bacias
+`data/station_subbasin_mapping.json`: mapeamento entre o ID das estações fluviométricas e o ID das subbacias.
+
+#estrutura `data/glob_1993a2023_mo.csv`
+Abaixo seguem as descrições de cada coluna do arquivo de dados meteorológicos.
+'year': ano de registro da observação dos dados meteorológicos
+'month': mês de registro da observação dos dados meteorológicos
+'latitude': latitude da estação meteorológica
+'longitude': longitude da estação meteorológica
+'u2': vento a 2 metros (m/s)
+'tmin': temperatura mínima (graus Celsius)
+'tmax': temperatura máxima (graus Celsius)
+'rs': radiação solar
+'rh': umidade relativa
+'eto': evapotranspiração
+'pr': precipitação (mm/mês)
+Coloque esse arquivo no .gitignore para evitar estourar o limite de upload do GitHub.
+
+#estrutura `data/FUNIL_VazaoObs_1998_2024.xlsx`
+Abaixo seguem as descrições das informações de vazão.
+Dentro da planilha você deve considerar os dados da aba `Vazao_FUNIL`.
+O intervalo B1:L1 contém o ID das estações fluviométricas.
+O intervalo A2:A9863 contém os dias de coleta de dados de vazão da estação fluviométrica.
+O intervalo B2:L9863 contém os dados diários de vazão da estação fluviométrica.
+
+#estrutura `data/Subbasin/FUNIL/Subbacias_FUNIL-4326WGS84.shp`
+No arquivo shapefile o atributo Subbasin indica a subbacia associada a cada polígono.
+
+#estrutura `data/station_subbasin_mapping.json`
+O arquivo está em formato JSON onde cada para nome/valor representa o ID da estação fluviométrica associada a um array de 1 ou N IDs de subbacias.
+Esse mapeamento representa quais subbacias influenciam a estação fluviométrica.
+
+#Mapeamento de dados meteorológicos por subbacia
+A primeira etapa do processamento de dados é associar cada estação meteorológica a uma subbacia.
+Você deve fazer um join espacial entre as coordenadas (latitude, longitude) da estação meteorológica e os polígonos do shapefile.
+Gere um arquivo JSON com o resultado dessa operação.
+
+#Mudança de escala dos dados de vazão
+Como os dados de vazão estão em uma escala diária você deve converter eles para uma escala mensal.
+O método de agregação dos dados deve ser a média.
+Gere um arquivo JSON com o resultado dessa operação.
+
+#Junção dos dados meteorológicos e de vazão
+Você deve mapear cada registro de vazão a uma subbacia usando o arquivo `data/station_subbasin_mapping.json`.
+No arquivo `data/station_subbasin_mapping.json` o ID das Subbacias está como string então converta para inteiro antes de fazer o join com os dados meteorológicos.
+No arquivo de dados meteorológicos a subbacia deve também ser convertida para inteiro para comparação.
+Você deve unir os dados meteorológicos e de vazão pelas seguintes chaves: ano, mês, ID da subbacia.
+Gere um arquivo JSON com o resultado dessa operação.
+
+#Deslocamento temporal
+Você deve criar um novo arquivo com um deslocamento temporal entre os dados meteorológicos e de vazão.
+Mantenha no arquivo somente os registros que contenham vazão diferente de null e maior que zero.
+O objetivo é que os dados meteorológicos sejam do mês X e os dados de vazão sejam do mês X+1. 
+A idéia é que no treinamento do modelo de Machine Learning os dados meteorológicos representem o vetor de variáveis preditoras e o dado de vazão represente a variável objetivo.
+Gere um arquivo JSON com o resultado dessa operação.
+
+#Consistência temporal
+Verifique a consistência temporal para que sempre o dado de vazão represente a informação da previsão do mês imediatamente posterior ao registro dos dados meteorológicos.
+
+#Q&A
+Faça um caderno de testes automatizado para garantir que todas as regras de negócio apresentadas estejam funcionadas em um subset dos dados fornecidos.
+
+#Documentação
+Ajuste o arquivo README.md com as regras de negócio implementadas.
+Crie um arquivo .TXT com uma sugestão de post para o LinkedIn falando de forma geral sobre o pipeline implementado e do poder do desenvolvimento assistido por IA para acelerar o processo de R&D nas empresas e Universidades.
+
