@@ -12,10 +12,11 @@ Este repositório contém um pipeline completo para preparação de dados meteor
 - Os dados diários de vazão são agregados para escala mensal utilizando a média dos valores diários.
 - O resultado é um arquivo JSON com a média mensal de vazão para cada estação.
 
-### 3. Junção dos Dados Meteorológicos e de Vazão
-- Os dados meteorológicos e de vazão são unidos pelas chaves: ano, mês e ID da subbacia.
-- O mapeamento entre estação fluviométrica e subbacia é feito via arquivo JSON de mapeamento.
-- O resultado é um arquivo JSON combinando as variáveis meteorológicas e a vazão mensal para cada subbacia.
+### 3. Agregação de Dados Meteorológicos e Junção com Vazão
+- **Ambiente de Produção/Inferência (Padrão):** Para gerar um único vetor de features por sub-bacia, as variáveis meteorológicas de todas as coordenadas dentro de uma mesma sub-bacia são agregadas em uma **média mensal** por `(ano, mês, subbacia)`. Isso garante um registro por mês para cada estação fluviométrica, ideal para modelos de inferência direta.
+- **Ambiente de Testes/Experimentação:** O script de junção pode ser facilmente ajustado para manter todas as coordenadas individuais, permitindo análises de maior granularidade espacial e o uso de modelos que capturam essa variabilidade.
+- Os dados meteorológicos (agregados ou não) são unidos aos dados de vazão pelas chaves: `ano`, `mês` e `ID da subbacia`.
+- O resultado é um arquivo JSON que combina as variáveis meteorológicas e a vazão mensal, pronto para a próxima etapa.
 
 ### 4. Deslocamento Temporal
 - É criado um novo dataset em que as variáveis meteorológicas do mês X são associadas à vazão do mês X+1 (deslocamento temporal).
