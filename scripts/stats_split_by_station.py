@@ -22,9 +22,14 @@ with open('data/station_subbasin_mapping.json') as f:
 coords_por_estacao = {}
 for station_id, subbacias in station_subbasin.items():
     subbacias_int = [int(s) for s in subbacias]
-    coords = meteo_subbasin[meteo_subbasin['Subbasin'].isin(subbacias_int)][['latitude', 'longitude']].drop_duplicates()
-    coords_por_estacao[station_id] = coords.shape[0]
-print('\nQuantidade de coordenadas esperada para cada estação:')
+    coords_set = set()
+    for sub in subbacias_int:
+        # Seleciona apenas latitude/longitude únicos para a subbacia
+        sub_coords = meteo_subbasin[meteo_subbasin['Subbasin'] == sub][['latitude', 'longitude']]
+        for coord in set(tuple(x) for x in sub_coords.values):
+            coords_set.add(coord)
+    coords_por_estacao[station_id] = len(coords_set)
+print('\nQuantidade de coordenadas únicas esperada para cada estação:')
 for k, v in coords_por_estacao.items():
     print(f'Estação {k}: {v}')
 

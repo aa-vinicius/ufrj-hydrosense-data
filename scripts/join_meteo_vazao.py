@@ -61,15 +61,20 @@ if 'Subbasin' in meteo.columns:
 elif 'subbasin_id' not in meteo.columns:
     raise Exception('Coluna de subbacia não encontrada no DataFrame meteorológico.')
 
+
+# Calcular a média mensal das variáveis meteorológicas por subbacia
+meteo_vars = ['u2', 'tmin', 'tmax', 'rs', 'rh', 'eto', 'pr']
+group_cols = ['year', 'month', 'subbasin_id']
+meteo_avg = meteo.groupby(group_cols)[meteo_vars].mean().reset_index()
+
 # Selecionar colunas relevantes
-meteo_cols = ['year', 'month', 'subbasin_id', 'u2', 'tmin', 'tmax', 'rs', 'rh', 'eto', 'pr']
 vazao_cols = ['year', 'month', 'subbasin_id', 'station_id', 'flow']
 
-# Unir
-df = pd.merge(meteo[meteo_cols], vazao[vazao_cols], on=['year', 'month', 'subbasin_id'], how='inner')
+# Unir os dados meteorológicos médios com os de vazão
+df_join = pd.merge(meteo_avg, vazao[vazao_cols], on=['year', 'month', 'subbasin_id'], how='inner')
 
 # Salvar como JSON
 with open('data/meteo_vazao_joined.json', 'w') as f:
-    json.dump(df.to_dict('records'), f, indent=2)
+    json.dump(df_join.to_dict('records'), f, indent=2)
 
 print('Junção meteorologia + vazão concluída. Arquivo salvo em data/meteo_vazao_joined.json')

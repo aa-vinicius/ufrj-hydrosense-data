@@ -18,15 +18,33 @@ def make_date(row):
 
 df['date'] = df.apply(make_date, axis=1)
 
-# Deslocar a vazão para o mês seguinte por subbacia
-# Para cada subbacia, alinhar as variáveis meteorológicas do mês X com a vazão do mês X+1
 
-def shift_flow(group):
-    group = group.sort_values('date')
-    group['flow_next_month'] = group['flow'].shift(-1)
+# Deslocar a vazão para o mês seguinte por subbacia E estação
+# Para cada (subbacia, estação), alinhar as variáveis meteorológicas do mês X com a vazão do mês X+1
+
+def is_next_month(row, next_row):
+    # Verifica se next_row é o mês seguinte de row
+    if pd.isnull(next_row['year']) or pd.isnull(next_row['month']):
+        return False
+    year, month = int(row['year']), int(row['month'])
+    next_year, next_month = int(next_row['year']), int(next_row['month'])
+    if month == 12:
+        return (next_year == year + 1) and (next_month == 1)
+    else:
+        return (next_year == year) and (next_month == month + 1)
+
+def shift_flow_preciso(group):
+    group = group.sort_values('date').reset_index(drop=True)
+    flow_next = []
+    for i in range(len(group)):
+        if i < len(group) - 1 and is_next_month(group.iloc[i], group.iloc[i+1]):
+            flow_next.append(group.iloc[i+1]['flow'])
+        else:
+            flow_next.append(None)
+    group['flow_next_month'] = flow_next
     return group
 
-df = df.groupby('subbasin_id').apply(shift_flow).reset_index(drop=True)
+df = df.groupby(['subbasin_id', 'station_id'], group_keys=False).apply(shift_flow_preciso).reset_index(drop=True)
 
 # Filtrar apenas registros com flow_next_month > 0 e não nulo
 filtered = df[(df['flow_next_month'].notnull()) & (df['flow_next_month'] > 0)]
