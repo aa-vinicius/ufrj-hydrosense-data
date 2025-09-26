@@ -21,9 +21,23 @@ long_df = df.melt(id_vars=['date'], var_name='station_id', value_name='flow')
 long_df['year'] = long_df['date'].dt.year
 long_df['month'] = long_df['date'].dt.month
 
-# Agregar por estação, ano e mês (média mensal)
+# Agregar por estação, ano e mês (média, máximo e mínimo mensal)
+monthly_agg = long_df.groupby(['station_id', 'year', 'month'], as_index=False)['flow'].agg({
+    'flow': 'mean',
+    'flow_max': 'max',
+    'flow_min': 'min'
+})
+
+# Renomear colunas para clareza
+monthly_agg = monthly_agg.rename(columns={'flow': 'flow'})
+
+# Manter compatibilidade: criar arquivo original apenas com média
 monthly = long_df.groupby(['station_id', 'year', 'month'], as_index=False)['flow'].mean()
 
-# Salvar como JSON
+# Salvar ambos os arquivos
 monthly.to_json('data/vazao_mensal.json', orient='records', date_format='iso', indent=2)
-print('Agregação mensal concluída. Arquivo salvo em data/vazao_mensal.json')
+monthly_agg.to_json('data/vazao_mensal_extended.json', orient='records', date_format='iso', indent=2)
+
+print('Agregação mensal concluída.')
+print('Arquivo original (apenas média) salvo em data/vazao_mensal.json')
+print('Arquivo estendido (média, máx, mín) salvo em data/vazao_mensal_extended.json')
