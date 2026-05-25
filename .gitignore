@@ -1,5 +1,6 @@
 # Arquivos grandes de dados
-/data/glob_1993a2023_mo.csv
-# /data/por_estacao/*
+data/gold/*
+data/silver_era5/*
 
 venv/*
+.venv/*
