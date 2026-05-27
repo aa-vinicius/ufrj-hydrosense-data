@@ -53,11 +53,9 @@ def main():
 
     print(f"Processando posto {station_str}...")
 
-    # 2. Agrupar espacialmente por dia (calculando a média das variáveis meteorológicas da bacia)
-    cols_meteo = [c for c in df_era5.columns if c not in ['subbasin_id', 'latitude', 'longitude', 'centroid_lat', 'centroid_lon', 'day']]
-    
-    print(f"Agrupando {len(subbasin_list)} sub-bacias espacialmente para o posto {station_str}...")
-    df_era5_daily = df_era5.groupby('day')[cols_meteo].mean().reset_index()
+    # 2. Remover agrupamento diário espacial (manter registros individuais por sub-bacia)
+    # Não há mais média espacial. Mantemos o df_era5 com todas as sub-bacias intactas.
+    print(f"Mantendo {len(subbasin_list)} sub-bacias individuais para o posto {station_str}...")
 
     # 3. Verificar se o posto existe no arquivo de vazões
     if station_str not in df_vazao.columns:
@@ -77,9 +75,10 @@ def main():
     # Remover coluna 'Vazao' original para manter apenas D0 a D30
     vazao_futura = vazao_station.drop(columns=['Vazao'])
 
-    # 5. Mesclar (Merge) dados meteorológicos médios do posto com a vazão futura
+    # 5. Mesclar (Merge) dados meteorológicos de cada sub-bacia com a vazão futura
+    print(f"Mesclando dados meteorológicos com a vazão futura para o posto {station_str}...")
     df_final = pd.merge(
-        df_era5_daily,
+        df_era5,
         vazao_futura,
         left_on='day',
         right_on='Data',
@@ -88,6 +87,34 @@ def main():
     
     # Remover coluna 'Data' duplicada após o merge
     df_final = df_final.drop(columns=['Data'])
+
+    # 5.5 Ordenar os dados por subbasin_id e day para consistência temporal e espacial
+    df_final = df_final.sort_values(by=['subbasin_id', 'day']).reset_index(drop=True)
+
+    # 5.6 Filtrar, ordenar e validar a estrutura final de colunas exigida pelo usuário
+    expected_cols = [
+        'day', 'subbasin_id', 'latitude', 'longitude', 'u10_mean', 'u10_max',
+        'u10_min', 'v10_mean', 'v10_max', 'v10_min', 'd2m_mean', 'd2m_max',
+        'd2m_min', 't2m_mean', 't2m_max', 't2m_min', 'ssrd_mean', 'ssrd_max',
+        'ssrd_min', 'tp_sum', 'tp_max', 'tp_min', 'Vazao_D0', 'Vazao_D1',
+        'Vazao_D2', 'Vazao_D3', 'Vazao_D4', 'Vazao_D5', 'Vazao_D6', 'Vazao_D7',
+        'Vazao_D8', 'Vazao_D9', 'Vazao_D10', 'Vazao_D11', 'Vazao_D12',
+        'Vazao_D13', 'Vazao_D14', 'Vazao_D15', 'Vazao_D16', 'Vazao_D17',
+        'Vazao_D18', 'Vazao_D19', 'Vazao_D20', 'Vazao_D21', 'Vazao_D22',
+        'Vazao_D23', 'Vazao_D24', 'Vazao_D25', 'Vazao_D26', 'Vazao_D27',
+        'Vazao_D28', 'Vazao_D29', 'Vazao_D30'
+    ]
+
+    missing_cols = [c for c in expected_cols if c not in df_final.columns]
+    if missing_cols:
+        print(f"Erro: As seguintes colunas esperadas não estão presentes no DataFrame final: {missing_cols}")
+        exit(1)
+
+    df_final = df_final[expected_cols]
+
+    # Validação estrita
+    assert list(df_final.columns) == expected_cols, "Erro de validação: A estrutura final das colunas não corresponde exatamente à estrutura exigida!"
+    print("Estrutura final validada com sucesso!")
 
     # 6. Salvar o resultado específico para esta estação
     df_final.to_csv(output_name, index=False)
