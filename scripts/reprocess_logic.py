@@ -3,8 +3,9 @@ import shutil
 import pandas as pd
 import json
 
-excel_path = "/Users/vinicius/Documents/ufrj-hydrosense-data/data/raw_vazao/PtsLight_VazaoObs_1998_2025.xlsx"
-silver_dir = "/Users/vinicius/Documents/ufrj-hydrosense-data/data/silver_vazao"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+excel_path = os.path.abspath(os.path.join(SCRIPT_DIR, "../data/raw_vazao/PtsLight_VazaoObs_1998_2025-v2.xlsx"))
+silver_dir = os.path.abspath(os.path.join(SCRIPT_DIR, "../data/silver_vazao"))
 
 try:
     # 1. Limpar a pasta silver_vazao

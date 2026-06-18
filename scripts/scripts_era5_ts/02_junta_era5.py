@@ -40,32 +40,35 @@ def main():
 
     # Mapear os arquivos zip locais às sub-bacias
     for subid in subbasins:
+        row_coord = df_coords[df_coords['Subbasin'] == subid].iloc[0]
+        c_lat, c_lon = str(row_coord['Lat']), str(row_coord['Lon'])
+        
+        # Procurar arquivo que corresponda ao ID e coordenadas específicas
+        possible_names = []
         try:
             int_subid = int(float(subid))
-            pattern_int = os.path.join(INPUT_DIR, f"dados_{int_subid}_*.csv.zip")
-            pattern_float = os.path.join(INPUT_DIR, f"dados_{float(subid)}_*.csv.zip")
-            files = glob.glob(pattern_int) + glob.glob(pattern_float)
+            possible_names.append(os.path.join(INPUT_DIR, f"dados_{int_subid}_{c_lat}_{c_lon}.csv.zip"))
+            possible_names.append(os.path.join(INPUT_DIR, f"dados_{float(subid)}_{c_lat}_{c_lon}.csv.zip"))
         except Exception:
-            pattern = os.path.join(INPUT_DIR, f"dados_{subid}_*.csv.zip")
-            files = glob.glob(pattern)
-
-        files = list(set(files))
+            possible_names.append(os.path.join(INPUT_DIR, f"dados_{subid}_{c_lat}_{c_lon}.csv.zip"))
+            
+        files = [f for f in possible_names if os.path.exists(f)]
         if not files:
-            print(f"Aviso: Arquivo de dados para sub-bacia {subid} não encontrado na pasta {INPUT_DIR}.")
+            # Fallback usando glob com o prefixo correto para lidar com pequenas diferenças de string
+            try:
+                int_subid = int(float(subid))
+                pattern = os.path.join(INPUT_DIR, f"dados_{int_subid}_{c_lat}*_{c_lon}*.csv.zip")
+                files = glob.glob(pattern)
+            except Exception:
+                files = []
+                
+        if not files:
+            print(f"Aviso: Arquivo de dados para sub-bacia {subid} (Lat: {c_lat}, Lon: {c_lon}) não encontrado na pasta {INPUT_DIR}.")
             continue
 
         caminho_zip = files[0]
         nome_filho = os.path.basename(caminho_zip)
         print(f"Processando Sub-bacia {subid} ({nome_filho})...")
-
-        # Extrair metadados do nome do arquivo
-        partes = re.findall(r"dados_([\d.]+)_([-\d.]+)_([-\d.]+)\.csv\.zip", nome_filho)
-        if partes:
-            _, c_lat, c_lon = partes[0]
-        else:
-            # Fallback a partir do coords_file se o regex falhar
-            row_coord = df_coords[df_coords['Subbasin'] == subid].iloc[0]
-            c_lat, c_lon = str(row_coord['Lat']), str(row_coord['Lon'])
 
         # Abrir o arquivo zip da sub-bacia
         with zipfile.ZipFile(caminho_zip, 'r') as zip_interno:

@@ -27,25 +27,20 @@ VARIABLES = [
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def download_subbasin(subid, lat, lon):
-    import glob
-    
-    # Verificar se já existe um arquivo válido para este ID de subbacia (tanto no formato int quanto float no nome)
+    # Verificar se já existe um arquivo válido para este ID de subbacia e coordenadas exatas
+    possible_names = []
     try:
         int_subid = int(float(subid))
-        pattern_int = os.path.join(OUTPUT_DIR, f"dados_{int_subid}_*.csv.zip")
-        pattern_float = os.path.join(OUTPUT_DIR, f"dados_{float(subid)}_*.csv.zip")
-        existing_files = glob.glob(pattern_int) + glob.glob(pattern_float)
+        possible_names.append(os.path.join(OUTPUT_DIR, f"dados_{int_subid}_{lat}_{lon}.csv.zip"))
+        possible_names.append(os.path.join(OUTPUT_DIR, f"dados_{float(subid)}_{lat}_{lon}.csv.zip"))
     except Exception:
-        pattern = os.path.join(OUTPUT_DIR, f"dados_{subid}_*.csv.zip")
-        existing_files = glob.glob(pattern)
+        possible_names.append(os.path.join(OUTPUT_DIR, f"dados_{subid}_{lat}_{lon}.csv.zip"))
         
-    existing_files = list(set(existing_files))
+    existing_files = [f for f in possible_names if os.path.exists(f) and os.path.getsize(f) > 0]
     
     if existing_files:
-        # Garantir que o arquivo existente não está vazio/corrompido
-        if any(os.path.exists(f) and os.path.getsize(f) > 0 for f in existing_files):
-            print(f"Sub-bacia {subid} já foi baixada ({os.path.basename(existing_files[0])}). Pulando...")
-            return subid, True
+        print(f"Sub-bacia {subid} (Lat: {lat}, Lon: {lon}) já foi baixada ({os.path.basename(existing_files[0])}). Pulando...")
+        return subid, True
 
     nome_arquivo = os.path.join(OUTPUT_DIR, f"dados_{subid}_{lat}_{lon}.csv.zip")
     print(f"Iniciando solicitação para Sub-bacia {subid} (Lat: {lat}, Lon: {lon})...")

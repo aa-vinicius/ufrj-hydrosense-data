@@ -4,3 +4,7 @@ data/silver_era5/*
 
 venv/*
 .venv/*
+
+# OS generated files
+.DS_Store
+**/.DS_Store
